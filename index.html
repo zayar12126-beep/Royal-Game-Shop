@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Royal Game Shop</title>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:Arial,sans-serif;
+}
+
+body{
+  background:#0c0b1a;
+  color:#fff;
+  padding-top:90px;
+}
+
+/* ===== TOP BAR ===== */
+.top-bar{
+  position:fixed;
+  top:0;left:0;
+  width:100%;
+  height:70px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:0 18px;
+  background:rgba(255,255,255,0.06);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(255,255,255,0.15);
+  z-index:999;
+}
+.logo-box img{height:46px}
+
+.nav-links a{
+  padding:8px 16px;
+  border-radius:14px;
+  background:rgba(255,255,255,0.1);
+  border:1px solid rgba(255,255,255,0.25);
+  color:#fff;
+  font-weight:600;
+  text-decoration:none;
+  margin-left:10px;
+}
+
+/* ===== BANNER ===== */
+.banner-wrapper{
+  padding:0 14px;
+}
+
+.banner-slider{
+  position:relative;
+  width:100%;
+  height:180px;               /* ⭐ Mobile fixed height */
+  border-radius:20px;
+  overflow:hidden;
+  margin:18px auto;
+  background:#000;
+}
+
+/* PC height */
+@media(min-width:768px){
+  .banner-slider{height:320px;}
+}
+
+.banner-slider img{
+  width:100%;
+  height:100%;
+  object-fit:contain;          /* ⭐ LOGO / TEXT မဖြတ် */
+  background:#000;             /* black bar ok */
+  position:absolute;
+  inset:0;
+  opacity:0;
+  transition:opacity .7s ease;
+}
+
+.banner-slider img.active{
+  opacity:1;
+}
+
+/* ===== DOTS ===== */
+.dots{
+  position:absolute;
+  bottom:390px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:8px;
+}
+.dots span{
+  width:8px;height:8px;
+  border-radius:50%;
+  background:rgba(255,255,255,.4);
+}
+.dots span.active{
+  background:#bb86fc;
+}
+
+/* ===== MAIN ===== */
+main{
+  padding:20px;
+  text-align:center;
+}
+
+.center-title{
+  font-size:28px;
+  color:#d6c1ff;
+  margin-bottom:22px;
+}
+
+.game-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:18px;
+}
+
+@media(min-width:768px){
+  .game-grid{grid-template-columns:repeat(3,1fr)}
+}
+@media(min-width:1100px){
+  .game-grid{grid-template-columns:repeat(4,1fr)}
+}
+
+.game-card{
+  background:rgba(255,255,255,0.07);
+  border-radius:20px;
+  padding:12px;
+  text-decoration:none;
+  color:#fff;
+  transition:.3s;
+}
+.game-card:hover{
+  transform:translateY(-6px);
+}
+
+.game-card img{
+  width:100%;
+  aspect-ratio:1/1;
+  object-fit:cover;
+  border-radius:14px;
+  margin-bottom:10px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="logo-box">
+    <img src="https://i.ibb.co/pBCj40vb/Untitled33-20250505002056.png">
+  </div>
+  <div class="nav-links">
+    <a href="about.html">About</a>
+    <a href="promo.html">Promo</a>
+  </div>
+</div>
+
+<!-- BANNER -->
+<div class="banner-wrapper">
+  <div class="banner-slider"></div>
+  <div class="dots"></div>
+</div>
+
+<main>
+  <h2 class="center-title">Choose Game</h2>
+  <div class="game-grid"></div>
+</main>
+
+<script>
+const BANNER_SHEET =
+"https://opensheet.elk.sh/1TrqwnYbOqSF9ugfFfbKIPMnHPeWuuNbPBhbIUFFwAI4/banners";
+const CATEGORY_SHEET =
+"https://opensheet.elk.sh/1TrqwnYbOqSF9ugfFfbKIPMnHPeWuuNbPBhbIUFFwAI4/categories";
+
+let index=0,timer=null,startX=0;
+
+/* ===== LOAD BANNERS ===== */
+async function loadBanners(){
+  const slider=document.querySelector(".banner-slider");
+  const dots=document.querySelector(".dots");
+
+  const res=await fetch(BANNER_SHEET);
+  const data=(await res.json()).filter(b=>b.active==="yes");
+
+  slider.innerHTML="";
+  dots.innerHTML="";
+
+  data.forEach((b,i)=>{
+    const img=document.createElement("img");
+    img.src=b.image;
+    if(i===0) img.classList.add("active");
+    slider.appendChild(img);
+
+    const dot=document.createElement("span");
+    if(i===0) dot.classList.add("active");
+    dots.appendChild(dot);
+  });
+
+  autoPlay();
+  swipe(slider);
+}
+
+function showSlide(i){
+  const imgs=document.querySelectorAll(".banner-slider img");
+  const dots=document.querySelectorAll(".dots span");
+
+  imgs.forEach(x=>x.classList.remove("active"));
+  dots.forEach(x=>x.classList.remove("active"));
+
+  imgs[i].classList.add("active");
+  dots[i].classList.add("active");
+}
+
+function autoPlay(){
+  clearInterval(timer);
+  timer=setInterval(()=>{
+    const total=document.querySelectorAll(".banner-slider img").length;
+    index=(index+1)%total;
+    showSlide(index);
+  },3500);
+}
+
+function swipe(el){
+  el.addEventListener("touchstart",e=>{
+    startX=e.touches[0].clientX;
+    clearInterval(timer);
+  });
+
+  el.addEventListener("touchend",e=>{
+    const diff=e.changedTouches[0].clientX-startX;
+    const total=document.querySelectorAll(".banner-slider img").length;
+
+    if(diff>50) index=(index-1+total)%total;
+    if(diff<-50) index=(index+1)%total;
+
+    showSlide(index);
+    autoPlay();
+  });
+}
+
+/* ===== LOAD GAMES ===== */
+async function loadCategories(){
+  const grid=document.querySelector(".game-grid");
+  const res=await fetch(CATEGORY_SHEET);
+  const data=await res.json();
+
+  grid.innerHTML="";
+  data.forEach(c=>{
+    if(c.active!=="yes") return;
+    grid.innerHTML+=`
+      <a href="products.html?cat=${c.id}" class="game-card">
+        <img src="${c.image}">
+        <span>${c.name}</span>
+      </a>`;
+  });
+}
+
+window.onload=()=>{
+  loadBanners();
+  loadCategories();
+};
+</script>
+
+</body>
+</html>
